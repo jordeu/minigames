@@ -16,7 +16,7 @@ try {
   await evaluate('location.reload()');
   await delay(1200);
   const originalMute=(await evaluate('localStorage.getItem("muted")')).result.value === 'true';
-  assert.match(await text(),/PERSONAL BEST/);
+  assert.match(await text(),/SNAKE BEST/);
   await key('KEYCODE_DPAD_CENTER');assert.match(await text(),/Ready to grow/);
   await key('KEYCODE_DPAD_CENTER');assert.doesNotMatch(await text(),/Ready to grow|Take a breather/);
   await key('KEYCODE_BACK');assert.match(await text(),/Take a breather/);
@@ -26,7 +26,7 @@ try {
   assert.match(await text(),/Take a breather/);
   await key('KEYCODE_DPAD_CENTER');await delay(4400);assert.match(await text(),/Good run/);
   await key('KEYCODE_DPAD_CENTER');await key('KEYCODE_BACK');assert.match(await text(),/Take a breather/);
-  await key('KEYCODE_DPAD_RIGHT');await key('KEYCODE_DPAD_CENTER');assert.match(await text(),/PERSONAL BEST/);
+  await key('KEYCODE_DPAD_RIGHT');await key('KEYCODE_DPAD_CENTER');assert.match(await text(),/SNAKE BEST/);
   await key('KEYCODE_DPAD_DOWN');await key('KEYCODE_DPAD_CENTER');
   const mute=(await evaluate('localStorage.getItem("muted")')).result.value;assert.ok(['true','false'].includes(mute));
   await evaluate('location.reload()');await delay(1200);
