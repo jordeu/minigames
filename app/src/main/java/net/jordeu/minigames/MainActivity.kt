@@ -67,7 +67,10 @@ class MainActivity : ComponentActivity() {
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> "select"
             else -> return false
         }
-        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) send("window.miniGames?.input('$key')")
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            if (event.repeatCount == 0) send("window.miniGames?.input('$key')")
+            else if (key != "select") send("window.miniGames?.repeatInput('$key')")
+        }
         return true
     }
     override fun onResume() {

@@ -3,8 +3,9 @@ import {Snake, SIZE} from './snake.js';
 import './style.css';
 import {GameSound} from './sound.js';
 import {ChickGame} from './chick-view.js';
+import {BananaGame} from './banana-view.js';
 import {moveGridFocus} from './chick-input.js';
-let chick;
+let chick,banana;
 const ui = document.querySelector('#ui');
 const game = new Snake();
 const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
@@ -16,8 +17,9 @@ let deathElapsed=0, eatElapsed=1;
 const DEATH_DURATION=1800;
 const button=(text,index)=>`<button data-index="${index}" class="${selected===index?'selected':''}">${text}</button>`;
 function drawUI(){
+  if(banana?.active){banana.draw();return;}
   if(chick?.active){chick.draw();return;}
-  if(state==='menu') ui.innerHTML=`<section class="menu"><div class="eyebrow">Pick up & play</div><h1>Mini Games<span style="color:#b7fa6b">.</span></h1><p>Small games. Big screen. One more round.</p><div class="game-cards"><div class="card ${selected===0?'active':''}"><span class="tag">01 / ARCADE</span><h2>Snake</h2><p>Grow your snake.<br>Keep clear of walls and yourself.</p>${button('Play Snake →',0)}</div><div class="card chick-card ${selected===1?'active':''}"><span class="tag">02 / LOGIC PUZZLE</span><h2>Chickdoku</h2><p>A place for every little chick.<br>Ten difficulties. Take your time.</p>${button('Play Chickdoku →',1)}</div></div>${button(muted?'Sound: Off':'Sound: On',2)}</section><div class="footer"><span>↑ ↓ ← → Choose &nbsp; • &nbsp; Select to play</span><span>SNAKE BEST &nbsp; ${best}</span></div>`;
+  if(state==='menu') ui.innerHTML=`<section class="menu"><div class="eyebrow">Pick up & play</div><h1>Mini Games<span style="color:#b7fa6b">.</span></h1><p>Small games. Big screen. One more round.</p><div class="game-cards"><div class="card ${selected===0?'active':''}"><span class="tag">01 / ARCADE</span><h2>Snake</h2><p>Grow your snake.<br>Keep clear of walls and yourself.</p>${button('Play Snake →',0)}</div><div class="card chick-card ${selected===1?'active':''}"><span class="tag">02 / LOGIC PUZZLE</span><h2>Chickdoku</h2><p>A place for every little chick.<br>Ten difficulties. Take your time.</p>${button('Play Chickdoku →',1)}</div><div class="card banana-card ${selected===2?'active':''}"><span class="tag">03 / TWO-PLAYER DUEL</span><h2>Banana Rooftops</h2><p>Jordi, Anna or Guim?<br>Choose your rival. Bring a banana.</p>${button('Play Banana Rooftops →',2)}</div></div>${button(muted?'Sound: Off':'Sound: On',3)}</section><div class="footer"><span>↑ ↓ ← → Choose &nbsp; • &nbsp; Select to play</span><span>SNAKE BEST &nbsp; ${best}</span></div>`;
   else {
     ui.innerHTML=`<div class="hud"><h2>Snake<span style="color:#b7fa6b">.</span></h2><div class="stats"><span>SCORE<strong>${game.score}</strong></span><span>BEST<strong>${best}</strong></span><span>LEVEL<strong>${1+Math.floor(game.score/30)}</strong></span></div></div><div class="footer"><span>↑ ↓ ← → Steer</span><span>Select: pause &nbsp; • &nbsp; Back: menu</span></div>`;
     if(state==='dying') {
@@ -33,12 +35,13 @@ function drawUI(){
 function setState(next){if(state==='dying' && next!=='over')sound.stop();state=next;selected=0;accumulator=0;drawUI();}
 function activate(){
   sound.select();
-  if(state==='menu') { if(selected===0){game.reset();setState('ready');syncBoard();}else if(selected===1)chick.open();else toggleMute(); }
+  if(state==='menu') { if(selected===0){game.reset();setState('ready');syncBoard();}else if(selected===1)chick.open();else if(selected===2)banana.open();else toggleMute(); }
   else if(selected===0){if(state==='over'){game.reset();eatElapsed=1;}setState('playing');syncBoard();}
   else if(selected===1)setState('menu');else toggleMute();
 }
 function toggleMute(){muted=!muted;sound.setMuted(muted);if(!muted)sound.select();save('muted',muted);drawUI();}
 function input(key){
+  if(banana?.active){banana.input(key);return;}
   if(chick?.active){chick.input(key);return;}
   sound.unlock();
   if(state==='dying'){if(key==='back')setState('over');return;}
@@ -48,13 +51,13 @@ function input(key){
   }
   if(key==='back'){if(state==='menu')return; if(state==='paused')setState('playing');else setState('menu');return;}
   if(key==='select'){activate();return;}
-  if(state==='menu')selected=moveGridFocus(selected,key,3);
+  if(state==='menu')selected=moveGridFocus(selected,key,4,3);
   else if(key==='left')selected=Math.max(0,selected-1);
   else if(key==='right')selected=Math.min(2,selected+1);
   drawUI();
 }
-window.miniGames={input,isMenu:()=>state==='menu'&&!chick?.active,suspend(){if(chick?.active){chick.suspend();return;}if(state==='playing')setState('paused');else if(state==='dying')setState('over');sound.suspend();}};
-window.addEventListener('keydown',e=>{const key={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',Enter:'select',Escape:'back',' ':'select'}[e.key];if(key){e.preventDefault();if(!e.repeat)input(key);}});
+window.miniGames={input,inspectBanana:()=>banana?.active?banana.inspect():null,isMenu:()=>state==='menu'&&!chick?.active&&!banana?.active,repeatInput(key){if(banana?.active)banana.repeatInput(key);},suspend(){if(banana?.active){banana.suspend();return;}if(chick?.active){chick.suspend();return;}if(state==='playing')setState('paused');else if(state==='dying')setState('over');sound.suspend();}};
+window.addEventListener('keydown',e=>{const key={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',Enter:'select',Escape:'back',' ':'select'}[e.key];if(key){e.preventDefault();if(!e.repeat)input(key);else window.miniGames.repeatInput(key);}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)window.miniGames.suspend();});
 let renderer,scene,camera,board,snakeGroup,food,stars,graphicsError=false;
 try {
@@ -89,6 +92,7 @@ try {
 function syncBoard(){window.updateSnake?.();if(food){food.visible=!!game.food;if(game.food)food.position.set(game.food[0]-8.5,.45,game.food[1]-8.5);}}
 function frame(time){
   const delta=Math.min(time-last,250);last=time;
+  if(banana?.active){banana.render(renderer,time,delta);requestAnimationFrame(frame);return;}
   if(chick?.active){chick.render(renderer,time);requestAnimationFrame(frame);return;}
   if(state==='playing'){
     accumulator+=delta;
@@ -122,4 +126,4 @@ function frame(time){
     const menu=state==='menu';camera.position.set(menu?0:0,menu?24:25,menu?29:25);camera.lookAt(menu?-9:0,0,menu?0:0);board.rotation.y=menu?-.16:0;food.rotation.y=time*.001;renderer.render(scene,camera);}
   requestAnimationFrame(frame);
 }
-if(!graphicsError){chick=new ChickGame({ui,sound,onExit:()=>setState('menu'),onMute:toggleMute,isMuted:()=>muted});drawUI();syncBoard();requestAnimationFrame(frame);}
+if(!graphicsError){banana=new BananaGame({ui,sound,onExit:()=>setState('menu'),onMute:toggleMute,isMuted:()=>muted});chick=new ChickGame({ui,sound,onExit:()=>setState('menu'),onMute:toggleMute,isMuted:()=>muted});drawUI();syncBoard();requestAnimationFrame(frame);}
