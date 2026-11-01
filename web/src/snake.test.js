@@ -1,0 +1,11 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {Snake} from './snake.js';
+test('food grows snake, scores and respawns off body',()=>{const g=new Snake(()=>0);g.food=[9,9];g.step();assert.equal(g.body.length,4);assert.equal(g.score,10);assert.ok(!g.body.some(p=>String(p)===String(g.food)));});
+test('rejects reversal, including queued reversal',()=>{const g=new Snake();g.turn('left');assert.deepEqual(g.queue,[]);g.turn('up');g.turn('down');assert.deepEqual(g.queue,['up']);});
+test('wall ends game',()=>{const g=new Snake();g.body=[[17,9],[16,9]];g.step();assert.equal(g.over,true);});
+test('self collision ends game',()=>{const g=new Snake();g.body=[[2,2],[2,3],[3,3],[3,2],[3,1]];g.step();assert.equal(g.over,true);});
+test('moving into vacated tail is legal',()=>{const g=new Snake();g.body=[[2,2],[2,3],[3,3],[3,2]];g.food=[0,0];g.step();assert.equal(g.over,false);});
+test('full board wins without a food placement loop',()=>{const g=new Snake();g.body=[];for(let y=0;y<18;y++)for(let x=0;x<18;x++)g.body.push([x,y]);g.placeFood();assert.equal(g.won,true);assert.equal(g.food,null);});
+test('two queued turns apply on separate moves',()=>{const g=new Snake();g.turn('up');g.turn('left');g.step();assert.deepEqual(g.body[0],[8,8]);g.step();assert.deepEqual(g.body[0],[7,8]);});
+test('speed increases with score and stays capped',()=>{const g=new Snake();const initial=g.interval;g.score=30;assert.ok(g.interval<initial);g.score=10000;assert.equal(g.interval,75);});

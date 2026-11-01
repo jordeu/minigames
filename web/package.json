@@ -1,0 +1,1 @@
+{"name":"minigames-web","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"vite --host 127.0.0.1","build":"vite build --base=./","test":"node --test src/snake.test.js"},"dependencies":{"three":"0.181.1"},"devDependencies":{"vite":"6.4.5"}}
