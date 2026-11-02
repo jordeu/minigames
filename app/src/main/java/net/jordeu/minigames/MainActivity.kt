@@ -71,6 +71,7 @@ class MainActivity : ComponentActivity() {
             if (event.repeatCount == 0) send("window.miniGames?.input('$key')")
             else if (key != "select") send("window.miniGames?.repeatInput('$key')")
         }
+        if (event.action == KeyEvent.ACTION_UP) send("window.miniGames?.keyUp('$key')")
         return true
     }
     override fun onResume() {
